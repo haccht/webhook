@@ -1,0 +1,9 @@
+[[hooks]]
+name = "ping"
+exec = "echo pong"
+workdir = "/"
+
+[[hooks]]
+name = "prettyjson"
+exec = "jq ."
+workdir = "/"
