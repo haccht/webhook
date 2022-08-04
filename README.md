@@ -44,4 +44,4 @@ $ cat input.json | curl -X POST -d @- http://localhost:8080/sample
 ```
 
 Data in POST request is saved in a temporary file and is passed to script as a command line argument.
-The command `/path/to/script.sh /tmp/webhook-sample-123456` will be executed and its result will be displayed.
+The command `/path/to/script.sh /tmp/webhook-sample-123456` will be executed and its output will be returned.

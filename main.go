@@ -16,6 +16,10 @@ import (
 	flags "github.com/jessevdk/go-flags"
 )
 
+type HookList struct {
+	Hooks []HookItem
+}
+
 type HookItem struct {
 	Name    string
 	Exec    string
@@ -77,9 +81,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var hooks struct {
-		Hooks []HookItem
-	}
+	var hooks HookList
 	_, err := toml.DecodeFile(options.Hook, &hooks)
 	if err != nil {
 		log.Fatal(err)
