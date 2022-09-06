@@ -51,7 +51,7 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 
 		commands := strings.Fields(h.Exec)
 		commands = append(commands, tmpfile.Name())
-		log.Printf("Executing %s", strings.Join(commands, " "))
+		log.Printf("Executing command: %s", strings.Join(commands, " "))
 
 		cmd := exec.Command(commands[0], commands[1:]...)
 		cmd.Stdout = w
@@ -61,6 +61,10 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 		}
 
 		cmd.Run()
+		exitCode := cmd.ProcessState.ExitCode()
+		if exitCode != 0 {
+			log.Printf("Failed with error code '%d': %s", exitCode, strings.Join(commands, " "))
+		}
 	}
 }
 
