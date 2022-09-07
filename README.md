@@ -9,7 +9,7 @@ Usage:
 
 Application Options:
   -a, --addr=     Address to listen on (default: :8080)
-  -h, --hook=     Path to the toml file containing hooks definition
+  -f, --file=     Path to the toml file containing hooks definition
       --pid=      Create PID file at the given path
       --tls       Activate https instead of http
       --tls-key=  Path to the private key pem file for HTTPS
@@ -31,7 +31,7 @@ exec = '/path/to/script.sh'
 Run `webhook` as below:
 
 ```sh
-$ webhook --hook hooks.toml
+$ webhook --file hooks.toml
 2022/08/01 21:00:00 Loaded sample hook
 2022/08/01 21:00:00 Listening on :8080
 ```
