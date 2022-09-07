@@ -40,7 +40,7 @@ It will start up webhook service with HTTP endpoint `http://localhost:8080/sampl
 Then you can execute the script using POST request:
 
 ```bash
-$ cat input.json | curl -X POST -d @- http://localhost:8080/sample
+$ cat input.json | curl -X POST --data-binary @- http://localhost:8080/sample
 ```
 
 Data in POST request will be passed to the script as stdin.
