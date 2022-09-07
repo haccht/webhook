@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -33,37 +32,26 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 			return
 		}
 		log.Printf("Triggered %s hook successfully", h.Name)
-
-		tmpfile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-", h.Name))
-		if err != nil {
-			http.Error(w, "HTTP Post request could not be read", 400)
-			return
-		}
-		defer tmpfile.Close()
-		defer os.Remove(tmpfile.Name())
-
-		_, err = io.Copy(tmpfile, r.Body)
-		if err != nil {
-			http.Error(w, "HTTP Post request could not be read", 400)
-			return
-		}
-		defer r.Body.Close()
+		log.Printf("Executing command: %s", h.Exec)
 
 		commands := strings.Fields(h.Exec)
-		commands = append(commands, tmpfile.Name())
-		log.Printf("Executing command: %s", strings.Join(commands, " "))
-
 		cmd := exec.Command(commands[0], commands[1:]...)
-		cmd.Stdout = w
-		cmd.Stderr = w
 		if h.Workdir != "" {
 			cmd.Dir = h.Workdir
 		}
 
+		stdin, _ := cmd.StdinPipe()
+		io.Copy(stdin, r.Body)
+		defer r.Body.Close()
+
+		cmd.Stdout = w
+		cmd.Stderr = w
+		stdin.Close()
+
 		cmd.Run()
-		exitCode := cmd.ProcessState.ExitCode()
-		if exitCode != 0 {
-			log.Printf("Failed with error code '%d': %s", exitCode, strings.Join(commands, " "))
+		errCode := cmd.ProcessState.ExitCode()
+		if errCode != 0 {
+			log.Printf("Failed with error code: %d", errCode)
 		}
 	}
 }
@@ -71,7 +59,7 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 func main() {
 	var options struct {
 		Addr        string `short:"a" long:"addr" description:"Address to listen on" default:":8080"`
-		Hook        string `short:"h" long:"hook" description:"Path to the toml file containing hooks definition" required:"true"`
+		Hook        string `short:"f" long:"file" description:"Path to the toml file containing hooks definition" required:"true"`
 		PidPath     string `long:"pid" description:"Create PID file at the given path"`
 		EnableTLS   bool   `long:"tls" description:"Activate https instead of http"`
 		TLSKeyPath  string `long:"tls-key"  description:"Path to the private key pem file for HTTPS"`

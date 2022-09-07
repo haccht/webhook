@@ -43,5 +43,5 @@ Then you can execute the script using POST request:
 $ cat input.json | curl -X POST -d @- http://localhost:8080/sample
 ```
 
-Data in POST request is saved in a temporary file and is passed to script as a command line argument.
-The command `/path/to/script.sh /tmp/webhook-sample-123456` will be executed and its output will be returned.
+Data in POST request will be passed to the script as stdin.
+The output result will be displayed.
