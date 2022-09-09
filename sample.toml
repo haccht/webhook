@@ -1,9 +1,19 @@
 [[hooks]]
-name = "ping"
-exec = "echo pong"
+name = "echo"
 workdir = "/"
+command = "cat"
 
 [[hooks]]
-name = "prettyjson"
-exec = "jq ."
+name = "count"
 workdir = "/"
+command = "wc -l"
+
+[[hooks]]
+name = "inline"
+inline = """
+content=$(cat)
+echo "== echo =="
+echo -E "${content}"
+echo "== count =="
+echo -E "${content}" | wc -c
+"""

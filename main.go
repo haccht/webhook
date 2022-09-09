@@ -21,8 +21,9 @@ type HookList struct {
 
 type HookItem struct {
 	Name    string
-	Exec    string
 	Workdir string
+	Command string
+	Inline  string
 }
 
 func webhookHandleFunc(h HookItem) http.HandlerFunc {
@@ -31,10 +32,18 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 			http.Error(w, "Method not allowed", 405)
 			return
 		}
-		log.Printf("Triggered %s hook successfully", h.Name)
-		log.Printf("Executing command: %s", h.Exec)
 
-		commands := strings.Fields(h.Exec)
+		var commands []string
+		if h.Inline != "" {
+			log.Printf("Execute command 'sh' on '%s' hook", h.Name)
+			commands = append(commands, "sh", "-c", h.Inline)
+		} else if h.Command != "" {
+			log.Printf("Execute command '%s' on '%s' hook", h.Command, h.Name)
+			commands = append(commands, strings.Fields(h.Command)...)
+		} else {
+			return
+		}
+
 		cmd := exec.Command(commands[0], commands[1:]...)
 		if h.Workdir != "" {
 			cmd.Dir = h.Workdir
@@ -80,7 +89,7 @@ func main() {
 	}
 
 	for _, h := range hooks.Hooks {
-		log.Printf("Loaded %s hook\n", h.Name)
+		log.Printf("Loaded '%s' hook\n", h.Name)
 		http.HandleFunc(path.Join("/", h.Name), webhookHandleFunc(h))
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

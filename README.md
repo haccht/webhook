@@ -25,14 +25,14 @@ Define some hooks you want to serve in `hooks.toml`.
 ```
 [[hooks]]
 name = 'sample'
-exec = '/path/to/script.sh'
+command = '/path/to/script.sh'
 ```
 
 Run `webhook` as below:
 
 ```sh
 $ webhook --file hooks.toml
-2022/08/01 21:00:00 Loaded sample hook
+2022/08/01 21:00:00 Loaded 'sample' hook
 2022/08/01 21:00:00 Listening on :8080
 ```
 
