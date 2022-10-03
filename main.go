@@ -45,6 +45,7 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 		}
 
 		cmd := exec.Command(commands[0], commands[1:]...)
+		cmd.Env = os.Environ()
 		if h.Workdir != "" {
 			cmd.Dir = h.Workdir
 		}
