@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -8,11 +9,13 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/facebookgo/pidfile"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/rs/xid"
 )
 
 type HookList struct {
@@ -26,7 +29,18 @@ type HookItem struct {
 	Inline  string
 }
 
+func ellipsis(text string, length int) string {
+	r := []rune(text)
+	if len(r) > length {
+		return string(r[0:length]) + "..."
+	}
+	return text
+}
+
 func webhookHandleFunc(h HookItem) http.HandlerFunc {
+	prefix := fmt.Sprintf("[%s]: [%s] ", h.Name, xid.New())
+	logger := log.New(os.Stdout, prefix, log.LstdFlags|log.Lmsgprefix)
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", 405)
@@ -35,10 +49,10 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 
 		var commands []string
 		if h.Inline != "" {
-			log.Printf("Execute command 'sh' on '%s' hook", h.Name)
+			logger.Printf("Execute command \"sh\"")
 			commands = append(commands, "sh", "-c", h.Inline)
 		} else if h.Command != "" {
-			log.Printf("Execute command '%s' on '%s' hook", h.Command, h.Name)
+			logger.Printf("Execute command \"%s\"", ellipsis(h.Command, 80))
 			commands = append(commands, strings.Fields(h.Command)...)
 		} else {
 			return
@@ -54,15 +68,20 @@ func webhookHandleFunc(h HookItem) http.HandlerFunc {
 		io.Copy(stdin, r.Body)
 		defer r.Body.Close()
 
-		cmd.Stdout = w
-		cmd.Stderr = w
+		var stdout bytes.Buffer
+		mw := io.MultiWriter(w, &stdout)
+		cmd.Stdout = mw
+		cmd.Stderr = mw
 		stdin.Close()
 
 		cmd.Run()
 		errCode := cmd.ProcessState.ExitCode()
 		if errCode != 0 {
-			log.Printf("Failed with error code: %d", errCode)
+			logger.Printf("Failed with error code: %d", errCode)
 		}
+
+		summary := ellipsis(stdout.String(), 80)
+		logger.Printf("Result: %s", strconv.Quote(summary))
 	}
 }
 
@@ -90,7 +109,7 @@ func main() {
 	}
 
 	for _, h := range hooks.Hooks {
-		log.Printf("Loaded '%s' hook\n", h.Name)
+		log.Printf("[%s]: Registered hook", h.Name)
 		http.HandleFunc(path.Join("/", h.Name), webhookHandleFunc(h))
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
